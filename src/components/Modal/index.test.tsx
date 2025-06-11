@@ -141,7 +141,7 @@ describe('Modal', () => {
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
 
-    it('Escape キーで onClose が呼ばれること', () => {
+    it('Escape キーで onClose が呼ばれること', async () => {
       const handleClose = vi.fn();
 
       render(
@@ -150,7 +150,7 @@ describe('Modal', () => {
         </Modal>
       );
 
-      fireEvent.keyDown(document, { key: 'Escape' });
+      await userEvent.keyboard('{Escape}');
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
 

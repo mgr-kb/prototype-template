@@ -77,7 +77,7 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
   ...rest
 }) => {
-  const showDismissButton = dismissible || onDismiss;
+  const showDismissButton = Boolean(onDismiss ?? dismissible);
 
   const badgeClasses = clsx(
     'inline-flex items-center gap-1 font-medium transition-colors',

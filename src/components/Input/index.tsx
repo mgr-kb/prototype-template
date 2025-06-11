@@ -92,11 +92,16 @@ export const Input: React.FC<InputProps> = ({
         className={inputClasses}
         aria-invalid={error}
         aria-required={required}
+        aria-describedby={showHelperText ? `${inputId}-helper` : undefined}
         required={required}
         data-testid={type === 'password' ? 'input' : undefined}
         {...rest}
       />
-      {showHelperText && <p className={helperClasses}>{helperTextContent}</p>}
+      {showHelperText && (
+        <p id={`${inputId}-helper`} className={helperClasses}>
+          {helperTextContent}
+        </p>
+      )}
     </div>
   );
 };
