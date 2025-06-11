@@ -9,7 +9,8 @@ type InputType =
   | 'number'
   | 'tel'
   | 'url'
-  | 'search';
+  | 'search'
+  | 'date';
 
 interface InputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
