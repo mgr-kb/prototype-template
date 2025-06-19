@@ -1,7 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // PPRはcanary版でのみ利用可能
+  experimental: {
+    // ppr: 'incremental',
+    useCache: true,
+  },
 };
 
 export default nextConfig;

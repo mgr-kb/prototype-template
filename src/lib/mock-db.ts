@@ -74,18 +74,6 @@ class MockDatabase {
       .slice(0, limit);
   }
 
-  async searchArticles(query: string, limit: number = 10): Promise<Article[]> {
-    const lowercaseQuery = query.toLowerCase();
-    return this.articles
-      .filter(
-        (article) =>
-          article.title.toLowerCase().includes(lowercaseQuery) ||
-          article.excerpt.toLowerCase().includes(lowercaseQuery) ||
-          article.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
-      )
-      .slice(0, limit);
-  }
-
   // コメント関連のメソッド
   async findCommentsByArticle(
     articleId: string,
@@ -145,6 +133,62 @@ class MockDatabase {
       category,
       count: stats.get(category.id) || 0,
     }));
+  }
+
+  async getTotalArticleCount(options?: { category?: string }): Promise<number> {
+    let articles = this.articles;
+    if (options?.category) {
+      articles = articles.filter((a) => a.category.slug === options.category);
+    }
+    return articles.length;
+  }
+
+  async incrementViewCount(articleId: string): Promise<void> {
+    const article = this.articles.find((a) => a.id === articleId);
+    if (article) {
+      article.viewCount += 1;
+    }
+  }
+
+  async getPopularTags(
+    limit: number
+  ): Promise<Array<{ tag: string; count: number }>> {
+    const tagCounts = new Map<string, number>();
+
+    this.articles.forEach((article) => {
+      article.tags.forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+
+    return Array.from(tagCounts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | null> {
+    return CATEGORIES.find((c) => c.slug === slug) || null;
+  }
+
+  async searchArticles(
+    query: string,
+    options?: { category?: string }
+  ): Promise<Article[]> {
+    const lowercaseQuery = query.toLowerCase();
+    let results = this.articles.filter(
+      (article) =>
+        article.title.toLowerCase().includes(lowercaseQuery) ||
+        article.excerpt.toLowerCase().includes(lowercaseQuery) ||
+        article.content.toLowerCase().includes(lowercaseQuery) ||
+        article.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
+    );
+
+    if (options?.category) {
+      results = results.filter((a) => a.category.slug === options.category);
+    }
+
+    return results;
   }
 }
 
