@@ -1,0 +1,152 @@
+import type { Article, Comment, AnalyticsMetrics, Category } from './types';
+import {
+  generateMockArticles,
+  generateMockComments,
+  generateMockAnalytics,
+  CATEGORIES,
+} from './mock-data-generators';
+
+class MockDatabase {
+  private articles: Article[];
+  private comments: Comment[];
+  private analytics: AnalyticsMetrics;
+
+  constructor() {
+    // 初期データを生成
+    console.log('Initializing mock database...');
+    this.articles = generateMockArticles(50);
+    this.comments = generateMockComments(50);
+    this.analytics = generateMockAnalytics();
+    console.log('Mock database initialized with', {
+      articles: this.articles.length,
+      comments: this.comments.length,
+    });
+  }
+
+  // 記事関連のメソッド
+  async findArticles(options?: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+    featured?: boolean;
+    delay?: number;
+  }): Promise<Article[]> {
+    // 遅延をシミュレート
+    if (options?.delay) {
+      await new Promise((resolve) => setTimeout(resolve, options.delay));
+    }
+
+    let results = [...this.articles];
+
+    // カテゴリでフィルタ
+    if (options?.category) {
+      results = results.filter((a) => a.category.slug === options.category);
+    }
+
+    // featuredでフィルタ
+    if (options?.featured !== undefined) {
+      results = results.filter((a) => a.featured === options.featured);
+    }
+
+    // ページネーション
+    const offset = options?.offset || 0;
+    const limit = options?.limit || 10;
+    results = results.slice(offset, offset + limit);
+
+    return results;
+  }
+
+  async findArticleBySlug(
+    slug: string,
+    delay?: number
+  ): Promise<Article | null> {
+    if (delay) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    return this.articles.find((a) => a.slug === slug) || null;
+  }
+
+  async findTrendingArticles(limit: number = 5): Promise<Article[]> {
+    // ビュー数でソートしてトップnを返す
+    return [...this.articles]
+      .sort((a, b) => b.viewCount - a.viewCount)
+      .slice(0, limit);
+  }
+
+  async searchArticles(query: string, limit: number = 10): Promise<Article[]> {
+    const lowercaseQuery = query.toLowerCase();
+    return this.articles
+      .filter(
+        (article) =>
+          article.title.toLowerCase().includes(lowercaseQuery) ||
+          article.excerpt.toLowerCase().includes(lowercaseQuery) ||
+          article.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
+      )
+      .slice(0, limit);
+  }
+
+  // コメント関連のメソッド
+  async findCommentsByArticle(
+    articleId: string,
+    delay?: number
+  ): Promise<Comment[]> {
+    if (delay) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    return this.comments.filter((c) => c.articleId === articleId);
+  }
+
+  async getRecentComments(limit: number = 10): Promise<Comment[]> {
+    return [...this.comments]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  // アナリティクス関連のメソッド
+  async getAnalytics(delay?: number): Promise<AnalyticsMetrics> {
+    if (delay) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    return { ...this.analytics };
+  }
+
+  async getTopArticles(
+    limit: number = 10
+  ): Promise<Array<Article & { views: number }>> {
+    return [...this.articles]
+      .sort((a, b) => b.viewCount - a.viewCount)
+      .slice(0, limit)
+      .map((article) => ({
+        ...article,
+        views: article.viewCount,
+      }));
+  }
+
+  // カテゴリ関連のメソッド
+  async getCategories(): Promise<Category[]> {
+    // CATEGORIESを返す（実際のDBでは別テーブルから取得）
+    return CATEGORIES;
+  }
+
+  async getCategoryStats(): Promise<
+    Array<{ category: Category; count: number }>
+  > {
+    const stats = new Map<string, number>();
+
+    this.articles.forEach((article) => {
+      const count = stats.get(article.category.id) || 0;
+      stats.set(article.category.id, count + 1);
+    });
+
+    return CATEGORIES.map((category) => ({
+      category,
+      count: stats.get(category.id) || 0,
+    }));
+  }
+}
+
+// シングルトンインスタンスをエクスポート
+export const db = new MockDatabase();
