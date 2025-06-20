@@ -10,6 +10,11 @@ class MockDatabase {
   private articles: Article[];
   private comments: Comment[];
   private analytics: AnalyticsMetrics;
+  private requestLog: Array<{
+    method: string;
+    params: unknown;
+    timestamp: number;
+  }> = [];
 
   constructor() {
     // 初期データを生成
@@ -23,6 +28,24 @@ class MockDatabase {
     });
   }
 
+  private logRequest(method: string, params: unknown = {}) {
+    const timestamp = Date.now();
+    this.requestLog.push({ method, params, timestamp });
+    console.log(
+      `[DB REQUEST] ${method}`,
+      params,
+      `at ${new Date(timestamp).toISOString()}`
+    );
+  }
+
+  getRequestLog() {
+    return [...this.requestLog];
+  }
+
+  clearRequestLog() {
+    this.requestLog = [];
+  }
+
   // 記事関連のメソッド
   async findArticles(options?: {
     category?: string;
@@ -31,6 +54,8 @@ class MockDatabase {
     featured?: boolean;
     delay?: number;
   }): Promise<Article[]> {
+    this.logRequest('findArticles', options);
+
     // 遅延をシミュレート
     if (options?.delay) {
       await new Promise((resolve) => setTimeout(resolve, options.delay));
@@ -115,6 +140,7 @@ class MockDatabase {
 
   // カテゴリ関連のメソッド
   async getCategories(): Promise<Category[]> {
+    this.logRequest('getCategories');
     // CATEGORIESを返す（実際のDBでは別テーブルから取得）
     return CATEGORIES;
   }
@@ -122,6 +148,7 @@ class MockDatabase {
   async getCategoryStats(): Promise<
     Array<{ category: Category; count: number }>
   > {
+    this.logRequest('getCategoryStats');
     const stats = new Map<string, number>();
 
     this.articles.forEach((article) => {
@@ -136,6 +163,7 @@ class MockDatabase {
   }
 
   async getTotalArticleCount(options?: { category?: string }): Promise<number> {
+    this.logRequest('getTotalArticleCount', options);
     let articles = this.articles;
     if (options?.category) {
       articles = articles.filter((a) => a.category.slug === options.category);

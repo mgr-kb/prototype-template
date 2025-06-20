@@ -1,6 +1,15 @@
-export function ArticleCardSkeleton() {
+interface ArticleCardSkeletonProps {
+  'data-testid'?: string;
+}
+
+export function ArticleCardSkeleton({
+  'data-testid': testId,
+}: ArticleCardSkeletonProps = {}) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-pulse">
+    <div
+      className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-pulse"
+      data-testid={testId}
+    >
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-5 w-16 bg-gray-200 rounded-full"></div>

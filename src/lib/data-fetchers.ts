@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { db } from './mock-db';
 import type { Article, Category } from './types';
 
@@ -47,14 +48,92 @@ export async function fetchLatestArticles(
   return await db.findArticles({ limit });
 }
 
-// カテゴリー一覧を取得する
-export async function fetchCategories(): Promise<Category[]> {
+// カテゴリー一覧を取得する（React cache使用でDeduplicating Requests）
+const getCategoriesFromDB = cache(async (): Promise<Category[]> => {
+  console.log(
+    '[CACHE] getCategoriesFromDB called - this should only appear once per request'
+  );
   return await db.getCategories();
+});
+
+export async function fetchCategories(): Promise<Category[]> {
+  return await getCategoriesFromDB();
 }
 
-// カテゴリー別の記事数を取得する
+// カテゴリー別の記事数を取得する（React cache使用でDeduplicating Requests）
+const getCategoryStatsFromDB = cache(
+  async (): Promise<Array<{ category: Category; count: number }>> => {
+    console.log(
+      '[CACHE] getCategoryStatsFromDB called - this should only appear once per request'
+    );
+    return await db.getCategoryStats();
+  }
+);
+
 export async function fetchCategoryStats(): Promise<
   Array<{ category: Category; count: number }>
 > {
+  return await getCategoryStatsFromDB();
+}
+
+// ページネーション対応で記事を取得する
+export async function fetchArticlesWithPagination(options?: {
+  page?: number;
+  limit?: number;
+}): Promise<Article[]> {
+  const page = options?.page || 1;
+  const limit = options?.limit || 12;
+  const offset = (page - 1) * limit;
+
+  return await db.findArticles({
+    offset,
+    limit,
+  });
+}
+
+// カテゴリ別記事を取得する（ページネーション付き）
+export async function fetchArticlesByCategory(
+  categorySlug: string,
+  options?: {
+    page?: number;
+    limit?: number;
+  }
+): Promise<Article[]> {
+  const page = options?.page || 1;
+  const limit = options?.limit || 12;
+  const offset = (page - 1) * limit;
+
+  return await db.findArticles({
+    category: categorySlug,
+    offset,
+    limit,
+  });
+}
+
+// 記事総数を取得する
+export async function fetchTotalArticleCount(
+  categorySlug?: string
+): Promise<number> {
+  return await db.getTotalArticleCount(
+    categorySlug ? { category: categorySlug } : undefined
+  );
+}
+
+// Deduplicating Requests の比較用関数
+
+// React cache を使わない版（重複リクエストが発生する）
+export async function fetchCategoriesNoDedupe(): Promise<Category[]> {
+  console.log(
+    '[NO DEDUPE] fetchCategoriesNoDedupe called - this will appear multiple times'
+  );
+  return await db.getCategories();
+}
+
+export async function fetchCategoryStatsNoDedupe(): Promise<
+  Array<{ category: Category; count: number }>
+> {
+  console.log(
+    '[NO DEDUPE] fetchCategoryStatsNoDedupe called - this will appear multiple times'
+  );
   return await db.getCategoryStats();
 }
