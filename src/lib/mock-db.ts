@@ -218,6 +218,54 @@ class MockDatabase {
 
     return results;
   }
+
+  async findRelatedArticles(
+    articleId: string,
+    limit: number = 4,
+    delay?: number
+  ): Promise<Article[]> {
+    this.logRequest('findRelatedArticles', { articleId, limit });
+
+    if (delay) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const currentArticle = this.articles.find((a) => a.id === articleId);
+    if (!currentArticle) {
+      return [];
+    }
+
+    // スコアベースで関連記事を選択
+    const relatedArticles = this.articles
+      .filter((article) => article.id !== articleId)
+      .map((article) => {
+        let score = 0;
+
+        // 同じカテゴリ：高スコア
+        if (article.category.id === currentArticle.category.id) {
+          score += 10;
+        }
+
+        // 共通タグ：タグ数に応じてスコア
+        const commonTags = article.tags.filter((tag) =>
+          currentArticle.tags.includes(tag)
+        );
+        score += commonTags.length * 5;
+
+        // 同じ著者：中スコア
+        if (article.author.id === currentArticle.author.id) {
+          score += 3;
+        }
+
+        return { article, score };
+      })
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ article }) => article);
+
+    return relatedArticles;
+  }
 }
 
 // シングルトンインスタンスをエクスポート

@@ -1,7 +1,7 @@
-import { unstable_cache } from 'next/cache';
+import { unstable_cache, unstable_cacheLife } from 'next/cache';
 import { cache } from 'react';
 import { db } from './mock-db';
-import type { Article, Category } from './types';
+import type { Article, Category, Comment } from './types';
 
 // "use cache"指令を使用した新しいキャッシュAPI
 export async function getArticle(slug: string) {
@@ -136,4 +136,30 @@ export async function fetchCategoryStatsNoDedupe(): Promise<
     '[NO DEDUPE] fetchCategoryStatsNoDedupe called - this will appear multiple times'
   );
   return await db.getCategoryStats();
+}
+
+// 関連記事を取得する（時間ベースキャッシュ付き）
+export async function getRelatedArticles(articleId: string, limit: number = 4) {
+  'use cache';
+
+  // 30分間隔で再検証（1800秒 = 30分）
+  unstable_cacheLife({
+    stale: 1800, // 30分後にstaleとみなす
+    revalidate: 900, // 15分後に再検証開始
+    expire: 3600, // 1時間後に完全期限切れ
+  });
+
+  return await db.findRelatedArticles(articleId, limit);
+}
+
+// コメントを取得する（Streaming対応）
+export async function getComments(
+  articleId: string,
+  delay: number = 2000
+): Promise<Comment[]> {
+  // Streamingのために遅延を追加
+  console.log(
+    `[STREAMING] Getting comments for article ${articleId} with ${delay}ms delay`
+  );
+  return await db.findCommentsByArticle(articleId, delay);
 }
