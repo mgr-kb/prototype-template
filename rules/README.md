@@ -51,6 +51,23 @@
 
 ※個人環境への依存のため、本テンプレートではこの項はあまり気にしないで良いかも。
 
+## gemini-cli
+
+https://github.com/google-gemini/gemini-cli/tree/main
+
+### Rules
+
+`./GEMINI.md`を配置する。
+
+Claude Codeの`CLAUDE.md`と同様に、ファイル参照は `@filepath`で参照できる。
+
+```
+プロジェクト概要は@READMEを、このプロジェクトで利用可能なnpmコマンドは@package.jsonを参照してください。
+
+# 追加指示
+- gitワークフロー @docs/git-instructions.md
+```
+
 ## Cursor
 
 [Rules](https://docs.cursor.com/context/rules)
