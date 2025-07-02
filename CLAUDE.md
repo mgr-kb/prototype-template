@@ -27,3 +27,11 @@
 ## Next.js/React
 
 @rules/common/nextjs.md
+
+## チャットのやり取り
+
+<every_chat>
+[main_output]
+
+#[n] times. # n = increment each chat, end line, etc(#1, #2...)
+</every_chat>
